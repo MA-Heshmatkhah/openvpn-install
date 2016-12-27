@@ -285,6 +285,19 @@ persist-tun
 status openvpn-status.log
 verb 3
 crl-verify crl.pem" >> /etc/openvpn/server.conf
+
+	# Generate PAM auth from https://www.linuxsysadmintutorials.com/setup-pam-authentication-with-openvpns-auth-pam-module
+	if [[ "$OS" = 'debian' ]]; then
+ 		echo"plugin /usr/lib/openvpn/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
+	else		
+		echo"plugin /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
+	fi
+	echo"auth    required        pam_unix.so    shadow    nodelay
+auth    requisite       pam_succeed_if.so uid >= 500 quiet
+auth    requisite       pam_succeed_if.so user ingroup wheel quiet
+auth    required        pam_tally2.so deny=4 even_deny_root unlock_time=1200
+account required        pam_unix.so"> /etc/pam.d/openvpn
+
 	# Enable net.ipv4.ip_forward for the system
 	sed -i '/\<net.ipv4.ip_forward\>/c\net.ipv4.ip_forward=1' /etc/sysctl.conf
 	if ! grep -q "\<net.ipv4.ip_forward\>" /etc/sysctl.conf; then
@@ -373,7 +386,9 @@ cipher AES-256-CBC
 comp-lzo
 setenv opt block-outside-dns
 key-direction 1
-verb 3" > /etc/openvpn/client-common.txt
+verb 3
+auth-user-pass" > /etc/openvpn/client-common.txt
+
 	# Generates the custom client.ovpn
 	newclient "$CLIENT"
 	echo ""
