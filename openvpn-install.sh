@@ -193,6 +193,11 @@ else
 	echo "   6) Verisign"
 	read -p "DNS [1-6]: " -e -i 1 DNS
 	echo ""
+	echo "Do you want to enable PAM authentication (using system users for vpn login)"
+	echo "   1) Yes"
+	echo "   2) No"
+	read -p "PAM [1-2 or y-n]: " -e -i 1 ENABLEPAM
+	echo ""
 	echo "Finally, tell me your name for the client cert"
 	echo "Please, use one word only, no special characters"
 	read -p "Client name: " -e -i client CLIENT
@@ -286,17 +291,21 @@ status openvpn-status.log
 verb 3
 crl-verify crl.pem" >> /etc/openvpn/server.conf
 
-	# Generate PAM auth from https://www.linuxsysadmintutorials.com/setup-pam-authentication-with-openvpns-auth-pam-module
-	if [[ "$OS" = 'debian' ]]; then
- 		echo"plugin /usr/lib/openvpn/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
-	else		
-		echo"plugin /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
-	fi
-	echo"auth    required        pam_unix.so    shadow    nodelay
+
+	if [ "$ENABLEPAM" = '1' ] || [ "$ENABLEPAM" = 'y' ] || [ "$ENABLEPAM" = 'Y' ]
+	then
+		# Generate PAM auth from https://www.linuxsysadmintutorials.com/setup-pam-authentication-with-openvpns-auth-pam-module
+		if [[ "$OS" = 'debian' ]]; then
+	 		echo"plugin /usr/lib/openvpn/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
+		else		
+			echo"plugin /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
+		fi
+		echo"auth    required        pam_unix.so    shadow    nodelay
 auth    requisite       pam_succeed_if.so uid >= 500 quiet
 auth    requisite       pam_succeed_if.so user ingroup wheel quiet
 auth    required        pam_tally2.so deny=4 even_deny_root unlock_time=1200
 account required        pam_unix.so"> /etc/pam.d/openvpn
+	fi
 
 	# Enable net.ipv4.ip_forward for the system
 	sed -i '/\<net.ipv4.ip_forward\>/c\net.ipv4.ip_forward=1' /etc/sysctl.conf
@@ -386,8 +395,11 @@ cipher AES-256-CBC
 comp-lzo
 setenv opt block-outside-dns
 key-direction 1
-verb 3
-auth-user-pass" > /etc/openvpn/client-common.txt
+verb 3" > /etc/openvpn/client-common.txt
+	if [ "$ENABLEPAM" = '1' ] || [ "$ENABLEPAM" = 'y' ] || [ "$ENABLEPAM" = 'Y' ]
+	then
+		echo"auth-user-pass" >> /etc/openvpn/client-common.txt
+	fi
 
 	# Generates the custom client.ovpn
 	newclient "$CLIENT"
