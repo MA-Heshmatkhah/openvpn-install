@@ -196,7 +196,7 @@ else
 	echo "Do you want to enable PAM authentication (using system users for vpn login)"
 	echo "   1) Yes"
 	echo "   2) No"
-	read -p "PAM [1-2 or y-n]: " -e -i 1 ENABLEPAM
+	read -p "PAM [1-2 or y-n]: " -e -i y ENABLEPAM
 	echo ""
 	echo "Finally, tell me your name for the client cert"
 	echo "Please, use one word only, no special characters"
@@ -296,11 +296,11 @@ crl-verify crl.pem" >> /etc/openvpn/server.conf
 	then
 		# Generate PAM auth from https://www.linuxsysadmintutorials.com/setup-pam-authentication-with-openvpns-auth-pam-module
 		if [[ "$OS" = 'debian' ]]; then
-	 		echo"plugin /usr/lib/openvpn/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
+	 		echo "plugin /usr/lib/openvpn/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
 		else		
-			echo"plugin /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
+			echo "plugin /usr/lib64/openvpn/plugins/openvpn-plugin-auth-pam.so openvpn">> /etc/openvpn/server.conf
 		fi
-		echo"auth    required        pam_unix.so    shadow    nodelay
+		echo "auth    required        pam_unix.so    shadow    nodelay
 auth    requisite       pam_succeed_if.so uid >= 500 quiet
 auth    requisite       pam_succeed_if.so user ingroup wheel quiet
 auth    required        pam_tally2.so deny=4 even_deny_root unlock_time=1200
@@ -398,7 +398,7 @@ key-direction 1
 verb 3" > /etc/openvpn/client-common.txt
 	if [ "$ENABLEPAM" = '1' ] || [ "$ENABLEPAM" = 'y' ] || [ "$ENABLEPAM" = 'Y' ]
 	then
-		echo"auth-user-pass" >> /etc/openvpn/client-common.txt
+		echo "auth-user-pass" >> /etc/openvpn/client-common.txt
 	fi
 
 	# Generates the custom client.ovpn
